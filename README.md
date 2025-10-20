@@ -25,7 +25,11 @@ Pkg.instantiate()
 
 ### Basic Usage
 
+First, make sure to activate the package environment and load the package:
+
 ```julia
+using Pkg
+Pkg.activate("path/to/UNStatsExplorer")  # Use "." if already in the directory
 using UNStatsExplorer
 
 # Create client
@@ -60,6 +64,8 @@ export_data(data, "poverty_data.xlsx")
 Launch the interactive CLI explorer:
 
 ```julia
+using Pkg
+Pkg.activate("path/to/UNStatsExplorer")  # Use "." if already in the directory
 using UNStatsExplorer
 
 interactive_explorer()
