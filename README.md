@@ -1,5 +1,7 @@
 # UNStatsExplorer.jl
 
+![](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnVxbnNpNDN4NDlsajF2ajg2cHFwb2NwbHkxeXI4ZG81NHZ6MWR6diZlcD12MV9naWZzX3NlYXJjaCZjdD1n/9ADoZQgs0tyww/giphy.gif)
+
 A Julia package for exploring and exporting UN Stats SDG (Sustainable Development Goals) data with minimal overhead and maximum flexibility.
 
 ## Features
