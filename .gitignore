@@ -1,0 +1,90 @@
+# Julia
+# Manifest.toml is typically gitignored for libraries but committed for applications
+# Since this is an application, we'll keep it for reproducibility
+# Manifest.toml
+*.jl.*.cov
+*.jl.cov
+*.jl.mem
+*.jl.html
+deps/deps.jl
+deps/build.log
+deps/downloads/
+LocalPreferences.toml
+
+# Julia compiled files
+*.ji
+
+# Generated files and data exports
+*.csv
+*.json
+*.arrow
+*.xlsx
+*.xls
+*.parquet
+*.feather
+
+# Output directories
+output/
+sdg_exports/
+data/
+results/
+cache/
+tmp/
+
+# Julia environment and package management
+.CondaPkg/
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+*.sublime-*
+.vimrc.local
+.lvimrc
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Documentation build
+docs/build/
+docs/site/
+
+# Test artifacts
+test/*.csv
+test/*.json
+test/*.arrow
+
+# Jupyter/IJulia
+.ipynb_checkpoints/
+*.ipynb
+
+# Python (in case of PyCall usage)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+ENV/
+
+# Keep example outputs if they exist
+!examples/*.csv
+!examples/*.json
+
+# Keep documentation assets
+!docs/src/assets/*
