@@ -8,17 +8,26 @@ Interactive menu for exploring SDG goals
 function explore_goals(client::SDGClient)
     goals = get_goals(client)
 
-    println("\n" * "="^70)
-    println("SDG GOALS ($(nrow(goals)) total)")
-    println("="^70)
+    show_header("SDG GOALS ($(nrow(goals)) total)")
+    display_table(goals, max_rows=17, show_summary=true)
 
-    display_table(goals)
+    println("\n📌 NAVIGATION:")
+    println("  • Enter a goal code (1-17) to explore indicators")
+    println("  • Type 'back' or 'b' to return to main menu")
+    println("  • Type 'export' or 'e' to save goals list")
+    print("\nYour choice: ")
 
-    println("\nEnter goal code to explore (or 'back' to return): ")
-    goal_code = readline()
+    choice = strip(readline())
 
-    if goal_code != "back" && !isempty(goal_code)
-        explore_goal_detail(client, goal_code)
+    if choice in ["back", "b", ""]
+        return
+    elseif choice in ["export", "e"]
+        export_data(goals, "sdg_goals.csv")
+        println("✓ Exported to sdg_goals.csv")
+        println("\nPress Enter to continue...")
+        readline()
+    elseif !isempty(choice)
+        explore_goal_detail(client, choice)
     end
 end
 
@@ -26,38 +35,52 @@ end
 Explore a specific goal in detail
 """
 function explore_goal_detail(client::SDGClient, goal_code::String)
-    println("\n" * "="^70)
-    println("GOAL $goal_code - INDICATORS")
-    println("="^70)
+    show_header("GOAL $goal_code - INDICATORS")
 
     indicators = get_indicators(client, goal=goal_code)
 
     if nrow(indicators) == 0
-        println("No indicators found for goal $goal_code")
+        println("\n⚠️  No indicators found for goal $goal_code")
+        println("\nPress Enter to return...")
+        readline()
         return
     end
 
-    display_table(indicators)
+    display_table(indicators, max_rows=20, show_summary=true)
 
-    println("\nOptions:")
-    println("  [i] <code> - View indicator data")
-    println("  [s] <keyword> - Search indicators")
-    println("  [e] - Export indicator list")
-    println("  [b] - Back")
-    println("\nChoice: ")
+    println("\n📌 NAVIGATION:")
+    println("  • Enter an indicator code (e.g., $(indicators.code[1])) to view data")
+    println("  • Type 'search <keyword>' or 's <keyword>' to search indicators")
+    println("  • Type 'export' or 'e' to save indicator list")
+    println("  • Type 'back' or 'b' to return")
+    print("\nYour choice: ")
 
-    choice = readline()
+    choice = strip(readline())
 
-    if startswith(choice, "i ")
-        indicator_code = strip(split(choice, " ", limit=2)[2])
-        explore_indicator_data(client, indicator_code)
-    elseif startswith(choice, "s ")
-        keyword = strip(split(choice, " ", limit=2)[2])
+    if choice in ["back", "b", ""]
+        return
+    elseif choice in ["export", "e"]
+        filename = "goal_$(goal_code)_indicators.csv"
+        export_data(indicators, filename)
+        println("✓ Exported to $filename")
+        println("\nPress Enter to continue...")
+        readline()
+    elseif startswith(lowercase(choice), "search ") || startswith(lowercase(choice), "s ")
+        # Extract keyword after "search " or "s "
+        keyword = if startswith(lowercase(choice), "search ")
+            String(strip(choice[8:end]))
+        else
+            String(strip(choice[3:end]))
+        end
+        println("\n🔍 Searching for: '$keyword'")
         results = search_indicators(client, keyword, goal=goal_code)
-        display_table(results)
-    elseif choice == "e"
-        export_data(indicators, "goal_$(goal_code)_indicators.csv")
-        println("Exported to goal_$(goal_code)_indicators.csv")
+        display_table(results, show_summary=true)
+        println("\nPress Enter to continue...")
+        readline()
+    else
+        # Assume it's an indicator code
+        indicator_code = String(strip(choice))
+        explore_indicator_data(client, indicator_code)
     end
 end
 
@@ -65,28 +88,36 @@ end
 Explore indicator data with filtering
 """
 function explore_indicator_data(client::SDGClient, indicator_code::String)
-    println("\n" * "="^70)
-    println("INDICATOR $indicator_code - DATA QUERY")
-    println("="^70)
+    show_header("INDICATOR $indicator_code - DATA QUERY")
 
-    println("\nFetch data options:")
-    println("  [a] - All available data (may be large)")
-    println("  [f] - Filtered query (specify countries and years)")
-    println("  [b] - Back")
-    println("\nChoice: ")
+    println("\n📊 FETCH OPTIONS:")
+    println("  • Type 'all' or 'a' for all available data (may be large)")
+    println("  • Type 'filter' or 'f' to specify countries and years")
+    println("  • Type 'back' or 'b' to return")
+    print("\nYour choice: ")
 
-    choice = readline()
+    choice = strip(lowercase(readline()))
 
-    if choice == "a"
-        println("\nFetching all data for $indicator_code...")
+    if choice in ["back", "b", ""]
+        return
+    elseif choice in ["all", "a"]
+        println("\n⏳ Fetching all data for indicator $indicator_code...")
         data = get_indicator_data(client, indicator=indicator_code)
-        display_table(data, max_rows=50)
 
         if nrow(data) > 0
+            display_table(data, max_rows=50, show_summary=true)
             export_choice(data, "indicator_$(indicator_code)")
+        else
+            println("\n⚠️  No data available for this indicator")
+            println("\nPress Enter to continue...")
+            readline()
         end
-    elseif choice == "f"
+    elseif choice in ["filter", "f"]
         filtered_query(client, indicator_code)
+    else
+        println("\n⚠️  Invalid choice. Please try again.")
+        println("\nPress Enter to continue...")
+        readline()
     end
 end
 
@@ -94,11 +125,14 @@ end
 Build a filtered query interactively
 """
 function filtered_query(client::SDGClient, indicator_code::String)
-    println("\n--- Filtered Query Builder ---")
+    show_header("FILTERED QUERY BUILDER")
 
     # Get countries
-    println("\nEnter country codes (comma-separated, or leave empty for all): ")
-    country_input = readline()
+    println("\n🌍 COUNTRY SELECTION:")
+    println("  Enter country codes separated by commas (e.g., USA, GBR, JPN)")
+    println("  Or leave empty to include all countries")
+    print("\nCountry codes: ")
+    country_input = strip(readline())
     countries = if isempty(country_input)
         nothing
     else
@@ -106,11 +140,32 @@ function filtered_query(client::SDGClient, indicator_code::String)
     end
 
     # Get years
-    println("\nEnter years (comma-separated or range like 2010-2020, or leave empty for all): ")
-    year_input = readline()
+    println("\n📅 TIME PERIOD SELECTION:")
+    println("  Enter years as:")
+    println("    • Range: 2010-2020")
+    println("    • List: 2010, 2015, 2020")
+    println("  Or leave empty to include all years")
+    print("\nYears: ")
+    year_input = strip(readline())
     years = parse_year_input(year_input)
 
-    println("\nFetching filtered data...")
+    # Summary of query
+    println("\n📋 QUERY SUMMARY:")
+    println("  Indicator: $indicator_code")
+    println("  Countries: $(isnothing(countries) ? "All" : join(countries, ", "))")
+    println("  Years: $(isnothing(years) ? "All" : join(years, ", "))")
+
+    print("\nProceed with query? (y/n): ")
+    confirm = strip(lowercase(readline()))
+
+    if confirm != "y"
+        println("\n⚠️  Query cancelled")
+        println("\nPress Enter to return...")
+        readline()
+        return
+    end
+
+    println("\n⏳ Fetching filtered data...")
     data = get_indicator_data(
         client,
         indicator=indicator_code,
@@ -118,10 +173,17 @@ function filtered_query(client::SDGClient, indicator_code::String)
         time_period=years
     )
 
-    display_table(data, max_rows=50)
-
     if nrow(data) > 0
+        display_table(data, max_rows=50, show_summary=true)
         export_choice(data, "indicator_$(indicator_code)_filtered")
+    else
+        println("\n⚠️  No data found matching your criteria")
+        println("\nTry:")
+        println("  • Different country codes")
+        println("  • Different time period")
+        println("  • Removing filters to see all available data")
+        println("\nPress Enter to return...")
+        readline()
     end
 end
 
@@ -129,26 +191,34 @@ end
 Prompt user to export data
 """
 function export_choice(df::DataFrame, base_name::String)
-    println("\nExport this data?")
-    println("  [c] - CSV")
-    println("  [j] - JSON")
-    println("  [a] - Arrow")
-    println("  [x] - Excel")
-    println("  [n] - No")
-    println("\nChoice: ")
+    println("\n💾 EXPORT OPTIONS:")
+    println("  • Type 'csv' or 'c' for CSV format")
+    println("  • Type 'json' or 'j' for JSON format")
+    println("  • Type 'arrow' or 'a' for Arrow format (efficient binary)")
+    println("  • Type 'excel' or 'x' for Excel format")
+    println("  • Type 'no' or 'n' to skip export")
+    print("\nExport format (or skip): ")
 
-    choice = readline()
+    choice = strip(lowercase(readline()))
 
     format_map = Dict(
-        "c" => ".csv",
-        "j" => ".json",
-        "a" => ".arrow",
-        "x" => ".xlsx"
+        "csv" => ".csv", "c" => ".csv",
+        "json" => ".json", "j" => ".json",
+        "arrow" => ".arrow", "a" => ".arrow",
+        "excel" => ".xlsx", "x" => ".xlsx"
     )
 
     if haskey(format_map, choice)
         filename = "$(base_name)_$(Dates.format(now(), "yyyymmdd_HHMMSS"))$(format_map[choice])"
         export_data(df, filename)
-        println("\nExported to: $filename")
+        println("\n✓ Exported $(nrow(df)) rows to: $filename")
+        println("\nPress Enter to continue...")
+        readline()
+    elseif choice in ["no", "n", ""]
+        # Skip export
+    else
+        println("\n⚠️  Invalid format. Export skipped.")
+        println("\nPress Enter to continue...")
+        readline()
     end
 end
