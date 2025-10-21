@@ -42,12 +42,37 @@ function interactive_explorer()
             results = search_indicators(client, keyword)
             display_table(results)
         elseif choice == "s"
-            println("\nEnter series code: ")
-            series_code = readline()
+            # Get and validate series code
+            series_list = get_series(client)
+            result = get_validated_code(
+                "\nEnter series code: ",
+                series_list.code,
+                series_list.description,
+                allow_empty=true,
+                fuzzy_threshold=0.6
+            )
 
+            if isnothing(result[1])
+                continue
+            end
+            series_code = result[1]
+
+            # Get and validate country codes
             println("\nEnter country codes (comma-separated, or leave empty): ")
-            country_input = readline()
-            countries = isempty(country_input) ? nothing : parse_list_input(country_input)
+            country_input = strip(readline())
+
+            countries = if isempty(country_input)
+                nothing
+            else
+                geoareas = get_geoareas(client)
+                validated_countries = get_multi_validated_codes(
+                    "Validating countries...",
+                    geoareas.geoAreaCode,
+                    geoareas.geoAreaName,
+                    fuzzy_threshold=0.7
+                )
+                isempty(validated_countries) ? nothing : validated_countries
+            end
 
             data = get_series_data(client, series=series_code, geoareas=countries)
             display_table(data, max_rows=50)
@@ -65,16 +90,51 @@ function interactive_explorer()
                 println("Exported to geoareas.csv")
             end
         elseif choice == "c"
-            println("\nEnter series code: ")
-            series_code = readline()
+            # Get and validate series code
+            series_list = get_series(client)
+            result = get_validated_code(
+                "\nEnter series code: ",
+                series_list.code,
+                series_list.description,
+                allow_empty=true,
+                fuzzy_threshold=0.6
+            )
 
-            println("\nEnter years (comma-separated): ")
-            years_input = readline()
-            years = [parse(Int, strip(y)) for y in split(years_input, ",")]
+            if isnothing(result[1])
+                continue
+            end
+            series_code = result[1]
 
+            # Get years with improved parsing
+            println("\nEnter years (comma-separated or range like 2010-2020): ")
+            years_input = strip(readline())
+            years = parse_year_input(years_input)
+
+            if isnothing(years)
+                println("⚠️  Invalid year format. Skipping trend comparison.")
+                continue
+            end
+
+            # Get and validate area codes
             println("\nEnter area codes (comma-separated, e.g., 001 for World): ")
-            areas_input = readline()
-            areas = parse_list_input(areas_input)
+            areas_input = strip(readline())
+
+            geoareas = get_geoareas(client)
+            areas = if isempty(areas_input)
+                String[]
+            else
+                get_multi_validated_codes(
+                    "Validating areas...",
+                    geoareas.geoAreaCode,
+                    geoareas.geoAreaName,
+                    fuzzy_threshold=0.7
+                )
+            end
+
+            if isempty(areas)
+                println("⚠️  No valid areas specified. Skipping trend comparison.")
+                continue
+            end
 
             data = compare_trends(client, series_code=series_code, years=years, area_codes=areas)
             display_table(data, max_rows=50)

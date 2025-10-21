@@ -15,19 +15,24 @@ function explore_goals(client::SDGClient)
     println("  • Enter a goal code (1-17) to explore indicators")
     println("  • Type 'back' or 'b' to return to main menu")
     println("  • Type 'export' or 'e' to save goals list")
-    print("\nYour choice: ")
 
-    choice = strip(readline())
+    result = get_validated_code(
+        "\nYour choice: ",
+        vcat(goals.code, ["back", "b", "export", "e"]),
+        vcat(goals.title, ["Return to main menu", "Return to main menu", "Export goals list", "Export goals list"]),
+        allow_empty=true,
+        fuzzy_threshold=0.5
+    )
 
-    if choice in ["back", "b", ""]
+    if isnothing(result[1]) || result[1] in ["back", "b"]
         return
-    elseif choice in ["export", "e"]
+    elseif result[1] in ["export", "e"]
         export_data(goals, "sdg_goals.csv")
         println("✓ Exported to sdg_goals.csv")
         println("\nPress Enter to continue...")
         readline()
-    elseif !isempty(choice)
-        explore_goal_detail(client, choice)
+    else
+        explore_goal_detail(client, result[1])
     end
 end
 
@@ -53,10 +58,11 @@ function explore_goal_detail(client::SDGClient, goal_code::String)
     println("  • Type 'search <keyword>' or 's <keyword>' to search indicators")
     println("  • Type 'export' or 'e' to save indicator list")
     println("  • Type 'back' or 'b' to return")
-    print("\nYour choice: ")
 
+    print("\nYour choice: ")
     choice = strip(readline())
 
+    # Check for special commands first
     if choice in ["back", "b", ""]
         return
     elseif choice in ["export", "e"]
@@ -78,9 +84,18 @@ function explore_goal_detail(client::SDGClient, goal_code::String)
         println("\nPress Enter to continue...")
         readline()
     else
-        # Assume it's an indicator code
-        indicator_code = String(strip(choice))
-        explore_indicator_data(client, indicator_code)
+        # Validate indicator code with fuzzy matching
+        result = get_validated_code(
+            "Confirm indicator code: ",
+            indicators.code,
+            indicators.description,
+            allow_empty=true,
+            fuzzy_threshold=0.6
+        )
+
+        if !isnothing(result[1])
+            explore_indicator_data(client, result[1])
+        end
     end
 end
 
@@ -127,16 +142,27 @@ Build a filtered query interactively
 function filtered_query(client::SDGClient, indicator_code::String)
     show_header("FILTERED QUERY BUILDER")
 
-    # Get countries
+    # Get countries with validation
     println("\n🌍 COUNTRY SELECTION:")
     println("  Enter country codes separated by commas (e.g., USA, GBR, JPN)")
     println("  Or leave empty to include all countries")
+
+    # Fetch available geographic areas for validation
+    geoareas = get_geoareas(client)
+
     print("\nCountry codes: ")
     country_input = strip(readline())
+
     countries = if isempty(country_input)
         nothing
     else
-        parse_list_input(country_input)
+        validated_countries = get_multi_validated_codes(
+            "Validating countries...",
+            geoareas.geoAreaCode,
+            geoareas.geoAreaName,
+            fuzzy_threshold=0.7
+        )
+        isempty(validated_countries) ? nothing : validated_countries
     end
 
     # Get years

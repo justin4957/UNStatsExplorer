@@ -10,6 +10,7 @@ using ProgressMeter
 using Arrow
 using XLSX
 using JSONTables
+using StringDistances
 
 export SDGClient, SDGConfig
 export get_goals, get_indicators, get_series, get_geoareas, get_targets
