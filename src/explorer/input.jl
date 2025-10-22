@@ -190,7 +190,7 @@ function validate_multi_codes(
     parts = parse_list_input(input)
 
     for part in parts
-        # Check for exact match
+        # Check for exact match against UN numeric codes
         exact_idx = findfirst(x -> lowercase(x) == lowercase(part), valid_codes)
 
         if !isnothing(exact_idx)
@@ -198,18 +198,33 @@ function validate_multi_codes(
             push!(selected, code)
             print_success("Added: $code")
         else
-            # Try fuzzy match for auto-correction
-            suggestions = find_fuzzy_matches(part, valid_codes, descriptions, threshold=fuzzy_threshold, max_results=1)
-
-            if !isempty(suggestions)
-                # Auto-correct if found above threshold
-                code = suggestions[1][1]
-                desc = suggestions[1][2]
-                score_pct = round(Int, suggestions[1][3] * 100)
-                push!(selected, code)
-                print_info("Auto-corrected '$part' → '$desc' ($(score_pct)% match)")
+            # Check if it's an ISO 3-letter code (USA, GBR, etc.)
+            part_upper = uppercase(strip(part))
+            if haskey(ISO_TO_UN_CODES, part_upper)
+                un_code = ISO_TO_UN_CODES[part_upper]
+                # Verify this UN code exists in the valid codes
+                code_idx = findfirst(x -> x == un_code, valid_codes)
+                if !isnothing(code_idx)
+                    push!(selected, un_code)
+                    country_name = descriptions[code_idx]
+                    print_info("Translated '$part' → '$country_name' ($un_code)")
+                else
+                    print_warning("ISO code '$part' maps to UN code $un_code, but not found in API")
+                end
             else
-                print_warning("Skipping invalid code: '$part'")
+                # Try fuzzy match for auto-correction
+                suggestions = find_fuzzy_matches(part, valid_codes, descriptions, threshold=fuzzy_threshold, max_results=1)
+
+                if !isempty(suggestions)
+                    # Auto-correct if found above threshold
+                    code = suggestions[1][1]
+                    desc = suggestions[1][2]
+                    score_pct = round(Int, suggestions[1][3] * 100)
+                    push!(selected, code)
+                    print_info("Auto-corrected '$part' → '$desc' ($(score_pct)% match)")
+                else
+                    print_warning("Skipping invalid code: '$part'")
+                end
             end
         end
     end
