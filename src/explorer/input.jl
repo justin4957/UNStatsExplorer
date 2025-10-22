@@ -198,14 +198,16 @@ function validate_multi_codes(
             push!(selected, code)
             print_success("Added: $code")
         else
-            # Try fuzzy match (higher threshold for auto-correction)
+            # Try fuzzy match for auto-correction
             suggestions = find_fuzzy_matches(part, valid_codes, descriptions, threshold=fuzzy_threshold, max_results=1)
 
-            if !isempty(suggestions) && suggestions[1][3] >= 0.85
-                # Auto-correct with high confidence
+            if !isempty(suggestions)
+                # Auto-correct if found above threshold
                 code = suggestions[1][1]
+                desc = suggestions[1][2]
+                score_pct = round(Int, suggestions[1][3] * 100)
                 push!(selected, code)
-                print_info("Auto-corrected '$part' → '$code'")
+                print_info("Auto-corrected '$part' → '$desc' ($(score_pct)% match)")
             else
                 print_warning("Skipping invalid code: '$part'")
             end
