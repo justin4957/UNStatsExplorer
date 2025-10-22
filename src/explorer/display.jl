@@ -134,8 +134,7 @@ function display_table_smart(
     if total_rows <= max_rows_per_page
         println()
         pretty_table(df,
-            maximum_number_of_columns=10,
-            header_crayon=COLOR_HEADER)
+            maximum_number_of_columns=10)
         return nothing
     end
 
@@ -152,8 +151,7 @@ function display_table_smart(
         end_idx = min(current_page * max_rows_per_page, total_rows)
 
         pretty_table(df[start_idx:end_idx, :],
-            maximum_number_of_columns=10,
-            header_crayon=COLOR_HEADER)
+            maximum_number_of_columns=10)
 
         println()
         print_info("Navigation: ")
