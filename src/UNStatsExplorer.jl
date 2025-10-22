@@ -22,6 +22,7 @@ export interactive_explorer, search_indicators
 
 include("config.jl")
 include("client.jl")
+include("country_codes.jl")
 include("metadata.jl")
 include("data.jl")
 include("exports.jl")

@@ -116,14 +116,29 @@ function explore_indicator_data(client::SDGClient, indicator_code::String)
     if choice in ["back", "b", ""]
         return
     elseif choice in ["all", "a"]
-        println("\n⏳ Fetching all data for indicator $indicator_code...")
-        data = get_indicator_data(client, indicator=indicator_code)
+        print_loading("Fetching all data for indicator $indicator_code")
 
-        if nrow(data) > 0
-            display_table(data, max_rows=50, show_summary=true)
-            export_choice(data, "indicator_$(indicator_code)")
-        else
-            print_warning("No data available for this indicator")
+        try
+            data = get_indicator_data(client, indicator=indicator_code)
+            print_loaded("Fetched $(nrow(data)) data points")
+
+            if nrow(data) > 0
+                display_table(data, max_rows=50, show_summary=true)
+                export_choice(data, "indicator_$(indicator_code)")
+            else
+                print_warning("No data available for this indicator")
+                println("\nPress Enter to continue...")
+                readline()
+            end
+        catch e
+            # Clear loading indicator
+            print("\r\033[K")
+            print_error("Failed to fetch data: $(sprint(showerror, e))")
+            println("\n\nPossible causes:")
+            println("  • API timeout (the request may be too large)")
+            println("  • Network connectivity issues")
+            println("  • Invalid indicator code")
+            println("\nTry using the filter option to narrow down the query.")
             println("\nPress Enter to continue...")
             readline()
         end
@@ -148,21 +163,30 @@ function filtered_query(client::SDGClient, indicator_code::String)
     println("  Or leave empty to include all countries")
 
     # Fetch available geographic areas for validation
+    print_loading("Loading geographic areas")
     geoareas = get_geoareas(client)
+    print_loaded("Loaded $(nrow(geoareas)) geographic areas")
 
     print("\nCountry codes: ")
-    country_input = strip(readline())
+    country_input = String(strip(readline()))
 
     countries = if isempty(country_input)
         nothing
     else
-        validated_countries = get_multi_validated_codes(
-            "Validating countries...",
+        println("\n⏳ Validating countries...")
+        validated_countries = validate_multi_codes(
+            country_input,
             geoareas.geoAreaCode,
             geoareas.geoAreaName,
             fuzzy_threshold=0.7
         )
-        isempty(validated_countries) ? nothing : validated_countries
+        if isempty(validated_countries)
+            println()
+            nothing
+        else
+            println()
+            validated_countries
+        end
     end
 
     # Get years
@@ -172,7 +196,7 @@ function filtered_query(client::SDGClient, indicator_code::String)
     println("    • List: 2010, 2015, 2020")
     println("  Or leave empty to include all years")
     print("\nYears: ")
-    year_input = strip(readline())
+    year_input = String(strip(readline()))
     years = parse_year_input(year_input)
 
     # Summary of query
@@ -191,23 +215,38 @@ function filtered_query(client::SDGClient, indicator_code::String)
         return
     end
 
-    println("\n⏳ Fetching filtered data...")
-    data = get_indicator_data(
-        client,
-        indicator=indicator_code,
-        geoareas=countries,
-        time_period=years
-    )
+    print_loading("Fetching filtered data")
 
-    if nrow(data) > 0
-        display_table(data, max_rows=50, show_summary=true)
-        export_choice(data, "indicator_$(indicator_code)_filtered")
-    else
-        print_warning("No data found matching your criteria")
-        println("\nTry:")
-        println("  • Different country codes")
-        println("  • Different time period")
-        println("  • Removing filters to see all available data")
+    try
+        data = get_indicator_data(
+            client,
+            indicator=indicator_code,
+            geoareas=countries,
+            time_period=years
+        )
+        print_loaded("Fetched $(nrow(data)) data points")
+
+        if nrow(data) > 0
+            display_table(data, max_rows=50, show_summary=true)
+            export_choice(data, "indicator_$(indicator_code)_filtered")
+        else
+            print_warning("No data found matching your criteria")
+            println("\nTry:")
+            println("  • Different country codes")
+            println("  • Different time period")
+            println("  • Removing filters to see all available data")
+            println("\nPress Enter to return...")
+            readline()
+        end
+    catch e
+        # Clear loading indicator
+        print("\r\033[K")
+        print_error("Failed to fetch data: $(sprint(showerror, e))")
+        println("\n\nPossible causes:")
+        println("  • API timeout (try again or use fewer filters)")
+        println("  • Network connectivity issues")
+        println("  • Invalid indicator code")
+        println("  • No data available for this combination")
         println("\nPress Enter to return...")
         readline()
     end

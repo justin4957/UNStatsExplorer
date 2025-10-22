@@ -59,8 +59,8 @@ function find_fuzzy_matches(
         # Check code similarity
         code_score = compare(input_lower, lowercase(code), JaroWinkler())
 
-        # Check description similarity (weighted lower)
-        desc_score = compare(input_lower, lowercase(desc), JaroWinkler()) * 0.7
+        # Check description similarity (weighted lower to prioritize exact code matches)
+        desc_score = compare(input_lower, lowercase(desc), JaroWinkler()) * 0.85
 
         # Use the better score
         max_score = max(code_score, desc_score)
@@ -172,6 +172,67 @@ function get_validated_code(
 end
 
 """
+Validate multiple codes from already-entered input
+Returns vector of validated codes without re-prompting
+"""
+function validate_multi_codes(
+    input::String,
+    valid_codes::Vector{String},
+    descriptions::Vector{String};
+    fuzzy_threshold::Float64=0.7
+)::Vector{String}
+
+    if isempty(strip(input))
+        return String[]
+    end
+
+    selected = String[]
+    parts = parse_list_input(input)
+
+    for part in parts
+        # Check for exact match against UN numeric codes
+        exact_idx = findfirst(x -> lowercase(x) == lowercase(part), valid_codes)
+
+        if !isnothing(exact_idx)
+            code = valid_codes[exact_idx]
+            push!(selected, code)
+            print_success("Added: $code")
+        else
+            # Check if it's an ISO 3-letter code (USA, GBR, etc.)
+            part_upper = uppercase(strip(part))
+            if haskey(ISO_TO_UN_CODES, part_upper)
+                un_code = ISO_TO_UN_CODES[part_upper]
+                # Verify this UN code exists in the valid codes
+                code_idx = findfirst(x -> x == un_code, valid_codes)
+                if !isnothing(code_idx)
+                    push!(selected, un_code)
+                    country_name = descriptions[code_idx]
+                    print_info("Translated '$part' → '$country_name' ($un_code)")
+                else
+                    print_warning("ISO code '$part' maps to UN code $un_code, but not found in API")
+                end
+            else
+                # Try fuzzy match for auto-correction
+                suggestions = find_fuzzy_matches(part, valid_codes, descriptions, threshold=fuzzy_threshold, max_results=1)
+
+                if !isempty(suggestions)
+                    # Auto-correct if found above threshold
+                    code = suggestions[1][1]
+                    desc = suggestions[1][2]
+                    score_pct = round(Int, suggestions[1][3] * 100)
+                    push!(selected, code)
+                    print_info("Auto-corrected '$part' → '$desc' ($(score_pct)% match)")
+                else
+                    print_warning("Skipping invalid code: '$part'")
+                end
+            end
+        end
+    end
+
+    return selected
+end
+
+"""
 Get multiple validated codes with fuzzy matching
 Returns vector of validated codes
 """
@@ -186,35 +247,5 @@ function get_multi_validated_codes(
     println("(Enter comma-separated values)")
     input = String(strip(readline()))
 
-    if isempty(input)
-        return String[]
-    end
-
-    selected = String[]
-    parts = parse_list_input(input)
-
-    for part in parts
-        # Check for exact match
-        exact_idx = findfirst(x -> lowercase(x) == lowercase(part), valid_codes)
-
-        if !isnothing(exact_idx)
-            code = valid_codes[exact_idx]
-            push!(selected, code)
-            println("  ✓ Added: $code")
-        else
-            # Try fuzzy match (higher threshold for auto-correction)
-            suggestions = find_fuzzy_matches(part, valid_codes, descriptions, threshold=fuzzy_threshold, max_results=1)
-
-            if !isempty(suggestions) && suggestions[1][3] >= 0.85
-                # Auto-correct with high confidence
-                code = suggestions[1][1]
-                push!(selected, code)
-                println("  ~ Auto-corrected '$part' to '$code'")
-            else
-                println("  ⚠️  Skipping invalid code: '$part'")
-            end
-        end
-    end
-
-    return selected
+    return validate_multi_codes(input, valid_codes, descriptions, fuzzy_threshold=fuzzy_threshold)
 end
