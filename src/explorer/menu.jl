@@ -123,8 +123,16 @@ function explore_indicator_data(client::SDGClient, indicator_code::String)
             print_loaded("Fetched $(nrow(data)) data points")
 
             if nrow(data) > 0
-                display_table(data, max_rows=50, show_summary=true)
-                export_choice(data, "indicator_$(indicator_code)")
+                result = display_table(data, max_rows=50, show_summary=true)
+
+                if result == :export
+                    export_choice(data, "indicator_$(indicator_code)")
+                else
+                    print("\nExport data? (y/n): ")
+                    if lowercase(strip(readline())) == "y"
+                        export_choice(data, "indicator_$(indicator_code)")
+                    end
+                end
             else
                 print_warning("No data available for this indicator")
                 println("\nPress Enter to continue...")
@@ -227,8 +235,16 @@ function filtered_query(client::SDGClient, indicator_code::String)
         print_loaded("Fetched $(nrow(data)) data points")
 
         if nrow(data) > 0
-            display_table(data, max_rows=50, show_summary=true)
-            export_choice(data, "indicator_$(indicator_code)_filtered")
+            result = display_table(data, max_rows=50, show_summary=true)
+
+            if result == :export
+                export_choice(data, "indicator_$(indicator_code)_filtered")
+            else
+                print("\nExport data? (y/n): ")
+                if lowercase(strip(readline())) == "y"
+                    export_choice(data, "indicator_$(indicator_code)_filtered")
+                end
+            end
         else
             print_warning("No data found matching your criteria")
             println("\nTry:")

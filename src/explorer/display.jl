@@ -110,9 +110,95 @@ function show_data_summary(df::DataFrame)
 end
 
 """
+Display DataFrame with smart pagination and navigation
+Automatically triggers pagination for datasets with 15+ rows
+"""
+function display_table_smart(
+    df::DataFrame;
+    max_rows_per_page::Int=15,
+    show_summary::Bool=true
+)
+    total_rows = nrow(df)
+
+    # Show summary first
+    if show_summary && total_rows > 0
+        show_data_summary(df)
+    end
+
+    if total_rows == 0
+        print_warning("No data to display")
+        return nothing
+    end
+
+    # If dataset is small enough, show all at once
+    if total_rows <= max_rows_per_page
+        println()
+        pretty_table(df,
+            maximum_number_of_columns=10)
+        return nothing
+    end
+
+    # Paginated display for large datasets
+    current_page = 1
+    total_pages = ceil(Int, total_rows / max_rows_per_page)
+
+    while true
+        println("\n" * "="^70)
+        print_info("Page $current_page of $total_pages ($(total_rows) total rows)")
+        println("="^70)
+
+        start_idx = (current_page - 1) * max_rows_per_page + 1
+        end_idx = min(current_page * max_rows_per_page, total_rows)
+
+        pretty_table(df[start_idx:end_idx, :],
+            maximum_number_of_columns=10)
+
+        println()
+        print_info("Navigation: ")
+        print("[n]ext [p]revious [f]irst [l]ast [q]uit [e]xport")
+        print("\n> ")
+        flush(stdout)
+
+        choice = lowercase(strip(readline()))
+
+        if choice == "n" && current_page < total_pages
+            current_page += 1
+        elseif choice == "p" && current_page > 1
+            current_page -= 1
+        elseif choice == "f"
+            current_page = 1
+        elseif choice == "l"
+            current_page = total_pages
+        elseif choice == "q"
+            break
+        elseif choice == "e"
+            return :export
+        else
+            if current_page >= total_pages && (choice == "n" || choice == "")
+                break
+            elseif current_page <= 1 && choice == "p"
+                print_warning("Already at first page")
+            elseif current_page >= total_pages && choice == "n"
+                print_warning("Already at last page")
+            else
+                print_warning("Invalid choice. Use [n]ext, [p]revious, [f]irst, [l]ast, [q]uit, or [e]xport")
+            end
+        end
+    end
+
+    return nothing
+end
+
+"""
 Display DataFrame with smart formatting and summary
 """
 function display_table(df::DataFrame; max_rows::Int=20, show_summary::Bool=true)
+    # Use smart pagination for large datasets (15+ rows)
+    if nrow(df) >= 15
+        result = display_table_smart(df, max_rows_per_page=max_rows, show_summary=show_summary)
+        return result
+    end
+
     # Show summary first
     if show_summary && nrow(df) > 0
         show_data_summary(df)
@@ -123,18 +209,10 @@ function display_table(df::DataFrame; max_rows::Int=20, show_summary::Bool=true)
         return
     end
 
-    # Display table
-    if nrow(df) > max_rows
-        println("\nShowing first $max_rows of $(nrow(df)) rows:")
-        pretty_table(first(df, max_rows),
-            maximum_number_of_columns=10,
-            maximum_number_of_rows=max_rows)
-        println("\n... $(nrow(df) - max_rows) more rows (use export to save all)")
-    else
-        println()
-        pretty_table(df,
-            maximum_number_of_columns=10)
-    end
+    # Display small tables directly
+    println()
+    pretty_table(df,
+        maximum_number_of_columns=10)
 end
 
 """

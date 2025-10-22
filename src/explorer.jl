@@ -85,10 +85,17 @@ function interactive_explorer()
                 data = get_series_data(client, series=series_code, geoareas=countries)
                 print_loaded("Fetched $(nrow(data)) data points")
 
-                display_table(data, max_rows=50)
+                result = display_table(data, max_rows=50)
 
                 if nrow(data) > 0
-                    export_choice(data, "series_$(series_code)")
+                    if result == :export
+                        export_choice(data, "series_$(series_code)")
+                    else
+                        print("\nExport data? (y/n): ")
+                        if lowercase(strip(readline())) == "y"
+                            export_choice(data, "series_$(series_code)")
+                        end
+                    end
                 end
             catch e
                 # Clear loading indicator
@@ -98,12 +105,15 @@ function interactive_explorer()
             end
         elseif choice == "a"
             areas = get_geoareas(client)
-            display_table(areas, max_rows=50)
+            result = display_table(areas, max_rows=50)
 
-            println("\nExport geographic areas? (y/n): ")
-            if readline() == "y"
-                export_data(areas, "geoareas.csv")
-                println("Exported to geoareas.csv")
+            if result == :export
+                export_choice(areas, "geoareas")
+            else
+                print("\nExport geographic areas? (y/n): ")
+                if lowercase(strip(readline())) == "y"
+                    export_choice(areas, "geoareas")
+                end
             end
         elseif choice == "c"
             # Get and validate series code
@@ -164,10 +174,17 @@ function interactive_explorer()
                 data = compare_trends(client, series_code=series_code, years=years, area_codes=areas)
                 print_loaded("Fetched $(nrow(data)) data points")
 
-                display_table(data, max_rows=50)
+                result = display_table(data, max_rows=50)
 
                 if nrow(data) > 0
-                    export_choice(data, "trends_$(series_code)")
+                    if result == :export
+                        export_choice(data, "trends_$(series_code)")
+                    else
+                        print("\nExport data? (y/n): ")
+                        if lowercase(strip(readline())) == "y"
+                            export_choice(data, "trends_$(series_code)")
+                        end
+                    end
                 end
             catch e
                 # Clear loading indicator
