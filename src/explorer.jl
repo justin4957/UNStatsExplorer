@@ -115,7 +115,7 @@ function interactive_explorer()
 
             # Get years with improved parsing
             println("\nEnter years (comma-separated or range like 2010-2020): ")
-            years_input = strip(readline())
+            years_input = String(strip(readline()))
             years = parse_year_input(years_input)
 
             if isnothing(years)

@@ -182,7 +182,7 @@ function filtered_query(client::SDGClient, indicator_code::String)
     println("    • List: 2010, 2015, 2020")
     println("  Or leave empty to include all years")
     print("\nYears: ")
-    year_input = strip(readline())
+    year_input = String(strip(readline()))
     years = parse_year_input(year_input)
 
     # Summary of query
