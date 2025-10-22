@@ -3,12 +3,63 @@ Display utilities for the interactive explorer
 Handles table formatting and presentation
 """
 
+# Color definitions for consistent styling
+const COLOR_SUCCESS = Crayon(foreground = :green, bold = true)
+const COLOR_ERROR = Crayon(foreground = :red, bold = true)
+const COLOR_WARNING = Crayon(foreground = :yellow, bold = true)
+const COLOR_INFO = Crayon(foreground = :blue)
+const COLOR_HEADER = Crayon(foreground = :cyan, bold = true)
+const COLOR_HIGHLIGHT = Crayon(foreground = :magenta)
+const COLOR_RESET = Crayon(reset = true)
+
+"""
+Print colored success message
+"""
+function print_success(msg::String)
+    println(COLOR_SUCCESS, "✓ ", msg, COLOR_RESET)
+end
+
+"""
+Print colored error message
+"""
+function print_error(msg::String)
+    println(COLOR_ERROR, "✗ ", msg, COLOR_RESET)
+end
+
+"""
+Print colored warning message
+"""
+function print_warning(msg::String)
+    println(COLOR_WARNING, "⚠  ", msg, COLOR_RESET)
+end
+
+"""
+Print colored info message
+"""
+function print_info(msg::String)
+    println(COLOR_INFO, "ℹ  ", msg, COLOR_RESET)
+end
+
+"""
+Print colored header
+"""
+function print_header(text::String)
+    println(COLOR_HEADER, text, COLOR_RESET)
+end
+
+"""
+Print colored highlight text
+"""
+function print_highlight(text::String)
+    println(COLOR_HIGHLIGHT, text, COLOR_RESET)
+end
+
 """
 Show summary statistics for DataFrame
 """
 function show_data_summary(df::DataFrame)
     println("\n" * "="^70)
-    println("📊 DATA SUMMARY")
+    print_header("📊 DATA SUMMARY")
     println("="^70)
     println("  Total rows: $(nrow(df))")
     println("  Total columns: $(ncol(df))")
@@ -42,7 +93,7 @@ function display_table(df::DataFrame; max_rows::Int=20, show_summary::Bool=true)
     end
 
     if nrow(df) == 0
-        println("\n⚠️  No data to display")
+        print_warning("No data to display")
         return
     end
 
@@ -79,6 +130,6 @@ Show a prominent header
 """
 function show_header(text::String)
     println("\n" * "="^70)
-    println(text)
+    print_header(text)
     println("="^70)
 end

@@ -2,7 +2,7 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "004e535ba17cf499ad895db3d25534dc076d4c16"
+project_hash = "1d3027cbdb74695b68b12a92f12f0e0f259ff9b3"
 
 [[deps.ArgCheck]]
 git-tree-sha1 = "f9e9a66c9b7be1ad7372bbd9b062d9230c30c5ce"
@@ -551,7 +551,7 @@ uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 version = "0.11.3"
 
 [[deps.UNStatsExplorer]]
-deps = ["Arrow", "CSV", "DataFrames", "Dates", "HTTP", "JSON3", "JSONTables", "PrettyTables", "ProgressMeter", "REPL", "StringDistances", "XLSX"]
+deps = ["Arrow", "CSV", "Crayons", "DataFrames", "Dates", "HTTP", "JSON3", "JSONTables", "PrettyTables", "ProgressMeter", "REPL", "StringDistances", "XLSX"]
 path = "."
 uuid = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 version = "0.1.0"

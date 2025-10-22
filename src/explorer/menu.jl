@@ -28,7 +28,7 @@ function explore_goals(client::SDGClient)
         return
     elseif result[1] in ["export", "e"]
         export_data(goals, "sdg_goals.csv")
-        println("✓ Exported to sdg_goals.csv")
+        print_success("Exported to sdg_goals.csv")
         println("\nPress Enter to continue...")
         readline()
     else
@@ -45,7 +45,7 @@ function explore_goal_detail(client::SDGClient, goal_code::String)
     indicators = get_indicators(client, goal=goal_code)
 
     if nrow(indicators) == 0
-        println("\n⚠️  No indicators found for goal $goal_code")
+        print_warning("No indicators found for goal $goal_code")
         println("\nPress Enter to return...")
         readline()
         return
@@ -68,7 +68,7 @@ function explore_goal_detail(client::SDGClient, goal_code::String)
     elseif choice in ["export", "e"]
         filename = "goal_$(goal_code)_indicators.csv"
         export_data(indicators, filename)
-        println("✓ Exported to $filename")
+        print_success("Exported to $filename")
         println("\nPress Enter to continue...")
         readline()
     elseif startswith(lowercase(choice), "search ") || startswith(lowercase(choice), "s ")
@@ -123,14 +123,14 @@ function explore_indicator_data(client::SDGClient, indicator_code::String)
             display_table(data, max_rows=50, show_summary=true)
             export_choice(data, "indicator_$(indicator_code)")
         else
-            println("\n⚠️  No data available for this indicator")
+            print_warning("No data available for this indicator")
             println("\nPress Enter to continue...")
             readline()
         end
     elseif choice in ["filter", "f"]
         filtered_query(client, indicator_code)
     else
-        println("\n⚠️  Invalid choice. Please try again.")
+        print_warning("Invalid choice. Please try again.")
         println("\nPress Enter to continue...")
         readline()
     end
@@ -185,7 +185,7 @@ function filtered_query(client::SDGClient, indicator_code::String)
     confirm = strip(lowercase(readline()))
 
     if confirm != "y"
-        println("\n⚠️  Query cancelled")
+        print_warning("Query cancelled")
         println("\nPress Enter to return...")
         readline()
         return
@@ -203,7 +203,7 @@ function filtered_query(client::SDGClient, indicator_code::String)
         display_table(data, max_rows=50, show_summary=true)
         export_choice(data, "indicator_$(indicator_code)_filtered")
     else
-        println("\n⚠️  No data found matching your criteria")
+        print_warning("No data found matching your criteria")
         println("\nTry:")
         println("  • Different country codes")
         println("  • Different time period")
@@ -237,13 +237,13 @@ function export_choice(df::DataFrame, base_name::String)
     if haskey(format_map, choice)
         filename = "$(base_name)_$(Dates.format(now(), "yyyymmdd_HHMMSS"))$(format_map[choice])"
         export_data(df, filename)
-        println("\n✓ Exported $(nrow(df)) rows to: $filename")
+        print_success("Exported $(nrow(df)) rows to: $filename")
         println("\nPress Enter to continue...")
         readline()
     elseif choice in ["no", "n", ""]
         # Skip export
     else
-        println("\n⚠️  Invalid format. Export skipped.")
+        print_warning("Invalid format. Export skipped.")
         println("\nPress Enter to continue...")
         readline()
     end

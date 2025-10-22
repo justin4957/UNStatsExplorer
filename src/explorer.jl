@@ -111,7 +111,7 @@ function interactive_explorer()
             years = parse_year_input(years_input)
 
             if isnothing(years)
-                println("⚠️  Invalid year format. Skipping trend comparison.")
+                print_warning("Invalid year format. Skipping trend comparison.")
                 continue
             end
 
@@ -132,7 +132,7 @@ function interactive_explorer()
             end
 
             if isempty(areas)
-                println("⚠️  No valid areas specified. Skipping trend comparison.")
+                print_warning("No valid areas specified. Skipping trend comparison.")
                 continue
             end
 
@@ -143,10 +143,10 @@ function interactive_explorer()
                 export_choice(data, "trends_$(series_code)")
             end
         elseif choice == "q"
-            println("\nGoodbye!")
+            print_info("Goodbye!")
             break
         else
-            println("\nInvalid choice. Please try again.")
+            print_error("Invalid choice. Please try again.")
         end
     end
 end
