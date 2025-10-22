@@ -59,8 +59,8 @@ function find_fuzzy_matches(
         # Check code similarity
         code_score = compare(input_lower, lowercase(code), JaroWinkler())
 
-        # Check description similarity (weighted lower)
-        desc_score = compare(input_lower, lowercase(desc), JaroWinkler()) * 0.7
+        # Check description similarity (weighted lower to prioritize exact code matches)
+        desc_score = compare(input_lower, lowercase(desc), JaroWinkler()) * 0.85
 
         # Use the better score
         max_score = max(code_score, desc_score)
