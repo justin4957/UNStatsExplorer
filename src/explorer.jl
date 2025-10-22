@@ -43,7 +43,7 @@ function interactive_explorer()
             display_table(results)
         elseif choice == "s"
             # Get and validate series code
-            series_list = get_series(client)
+            print_loading("Loading series list"); series_list = get_series(client); print_loaded("Loaded $(nrow(series_list)) series")
             result = get_validated_code(
                 "\nEnter series code: ",
                 series_list.code,
@@ -64,17 +64,25 @@ function interactive_explorer()
             countries = if isempty(country_input)
                 nothing
             else
+                print_loading("Loading geographic areas")
                 geoareas = get_geoareas(client)
-                validated_countries = get_multi_validated_codes(
-                    "Validating countries...",
+                print_loaded("Loaded $(nrow(geoareas)) geographic areas")
+
+                println("\n⏳ Validating countries...")
+                validated_countries = validate_multi_codes(
+                    country_input,
                     geoareas.geoAreaCode,
                     geoareas.geoAreaName,
                     fuzzy_threshold=0.7
                 )
+                println()
                 isempty(validated_countries) ? nothing : validated_countries
             end
 
+            print_loading("Fetching series data")
             data = get_series_data(client, series=series_code, geoareas=countries)
+            print_loaded("Fetched $(nrow(data)) data points")
+
             display_table(data, max_rows=50)
 
             if nrow(data) > 0
@@ -91,7 +99,7 @@ function interactive_explorer()
             end
         elseif choice == "c"
             # Get and validate series code
-            series_list = get_series(client)
+            print_loading("Loading series list"); series_list = get_series(client); print_loaded("Loaded $(nrow(series_list)) series")
             result = get_validated_code(
                 "\nEnter series code: ",
                 series_list.code,
@@ -119,16 +127,22 @@ function interactive_explorer()
             println("\nEnter area codes (comma-separated, e.g., 001 for World): ")
             areas_input = strip(readline())
 
+            print_loading("Loading geographic areas")
             geoareas = get_geoareas(client)
+            print_loaded("Loaded $(nrow(geoareas)) geographic areas")
+
             areas = if isempty(areas_input)
                 String[]
             else
-                get_multi_validated_codes(
-                    "Validating areas...",
+                println("\n⏳ Validating areas...")
+                validated_areas = validate_multi_codes(
+                    areas_input,
                     geoareas.geoAreaCode,
                     geoareas.geoAreaName,
                     fuzzy_threshold=0.7
                 )
+                println()
+                validated_areas
             end
 
             if isempty(areas)
@@ -136,7 +150,10 @@ function interactive_explorer()
                 continue
             end
 
+            print_loading("Comparing trends")
             data = compare_trends(client, series_code=series_code, years=years, area_codes=areas)
+            print_loaded("Fetched $(nrow(data)) data points")
+
             display_table(data, max_rows=50)
 
             if nrow(data) > 0

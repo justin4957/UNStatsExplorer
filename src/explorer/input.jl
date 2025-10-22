@@ -172,6 +172,50 @@ function get_validated_code(
 end
 
 """
+Validate multiple codes from already-entered input
+Returns vector of validated codes without re-prompting
+"""
+function validate_multi_codes(
+    input::String,
+    valid_codes::Vector{String},
+    descriptions::Vector{String};
+    fuzzy_threshold::Float64=0.7
+)::Vector{String}
+
+    if isempty(strip(input))
+        return String[]
+    end
+
+    selected = String[]
+    parts = parse_list_input(input)
+
+    for part in parts
+        # Check for exact match
+        exact_idx = findfirst(x -> lowercase(x) == lowercase(part), valid_codes)
+
+        if !isnothing(exact_idx)
+            code = valid_codes[exact_idx]
+            push!(selected, code)
+            print_success("Added: $code")
+        else
+            # Try fuzzy match (higher threshold for auto-correction)
+            suggestions = find_fuzzy_matches(part, valid_codes, descriptions, threshold=fuzzy_threshold, max_results=1)
+
+            if !isempty(suggestions) && suggestions[1][3] >= 0.85
+                # Auto-correct with high confidence
+                code = suggestions[1][1]
+                push!(selected, code)
+                print_info("Auto-corrected '$part' → '$code'")
+            else
+                print_warning("Skipping invalid code: '$part'")
+            end
+        end
+    end
+
+    return selected
+end
+
+"""
 Get multiple validated codes with fuzzy matching
 Returns vector of validated codes
 """
@@ -186,35 +230,5 @@ function get_multi_validated_codes(
     println("(Enter comma-separated values)")
     input = String(strip(readline()))
 
-    if isempty(input)
-        return String[]
-    end
-
-    selected = String[]
-    parts = parse_list_input(input)
-
-    for part in parts
-        # Check for exact match
-        exact_idx = findfirst(x -> lowercase(x) == lowercase(part), valid_codes)
-
-        if !isnothing(exact_idx)
-            code = valid_codes[exact_idx]
-            push!(selected, code)
-            println("  ✓ Added: $code")
-        else
-            # Try fuzzy match (higher threshold for auto-correction)
-            suggestions = find_fuzzy_matches(part, valid_codes, descriptions, threshold=fuzzy_threshold, max_results=1)
-
-            if !isempty(suggestions) && suggestions[1][3] >= 0.85
-                # Auto-correct with high confidence
-                code = suggestions[1][1]
-                push!(selected, code)
-                println("  ~ Auto-corrected '$part' to '$code'")
-            else
-                println("  ⚠️  Skipping invalid code: '$part'")
-            end
-        end
-    end
-
-    return selected
+    return validate_multi_codes(input, valid_codes, descriptions, fuzzy_threshold=fuzzy_threshold)
 end

@@ -55,6 +55,32 @@ function print_highlight(text::String)
 end
 
 """
+Print loading message for long-running operation
+"""
+function print_loading(msg::String)
+    print(COLOR_INFO, "⏳ ", msg, "...", COLOR_RESET)
+    flush(stdout)
+end
+
+"""
+Clear loading message and print completion
+"""
+function print_loaded(msg::String="Done")
+    print("\r\033[K")  # Clear line
+    print_success(msg)
+end
+
+"""
+Execute a function with loading indicator
+"""
+function with_loading(f::Function, loading_msg::String, success_msg::String="Done")
+    print_loading(loading_msg)
+    result = f()
+    print_loaded(success_msg)
+    return result
+end
+
+"""
 Show summary statistics for DataFrame
 """
 function show_data_summary(df::DataFrame)

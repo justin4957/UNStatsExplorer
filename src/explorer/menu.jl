@@ -116,8 +116,9 @@ function explore_indicator_data(client::SDGClient, indicator_code::String)
     if choice in ["back", "b", ""]
         return
     elseif choice in ["all", "a"]
-        println("\n⏳ Fetching all data for indicator $indicator_code...")
+        print_loading("Fetching all data for indicator $indicator_code")
         data = get_indicator_data(client, indicator=indicator_code)
+        print_loaded("Fetched $(nrow(data)) data points")
 
         if nrow(data) > 0
             display_table(data, max_rows=50, show_summary=true)
@@ -148,7 +149,9 @@ function filtered_query(client::SDGClient, indicator_code::String)
     println("  Or leave empty to include all countries")
 
     # Fetch available geographic areas for validation
+    print_loading("Loading geographic areas")
     geoareas = get_geoareas(client)
+    print_loaded("Loaded $(nrow(geoareas)) geographic areas")
 
     print("\nCountry codes: ")
     country_input = strip(readline())
@@ -156,13 +159,20 @@ function filtered_query(client::SDGClient, indicator_code::String)
     countries = if isempty(country_input)
         nothing
     else
-        validated_countries = get_multi_validated_codes(
-            "Validating countries...",
+        println("\n⏳ Validating countries...")
+        validated_countries = validate_multi_codes(
+            country_input,
             geoareas.geoAreaCode,
             geoareas.geoAreaName,
             fuzzy_threshold=0.7
         )
-        isempty(validated_countries) ? nothing : validated_countries
+        if isempty(validated_countries)
+            println()
+            nothing
+        else
+            println()
+            validated_countries
+        end
     end
 
     # Get years
@@ -191,13 +201,14 @@ function filtered_query(client::SDGClient, indicator_code::String)
         return
     end
 
-    println("\n⏳ Fetching filtered data...")
+    print_loading("Fetching filtered data")
     data = get_indicator_data(
         client,
         indicator=indicator_code,
         geoareas=countries,
         time_period=years
     )
+    print_loaded("Fetched $(nrow(data)) data points")
 
     if nrow(data) > 0
         display_table(data, max_rows=50, show_summary=true)
