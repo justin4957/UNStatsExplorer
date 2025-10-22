@@ -154,7 +154,7 @@ function filtered_query(client::SDGClient, indicator_code::String)
     print_loaded("Loaded $(nrow(geoareas)) geographic areas")
 
     print("\nCountry codes: ")
-    country_input = strip(readline())
+    country_input = String(strip(readline()))
 
     countries = if isempty(country_input)
         nothing

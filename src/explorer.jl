@@ -59,7 +59,7 @@ function interactive_explorer()
 
             # Get and validate country codes
             println("\nEnter country codes (comma-separated, or leave empty): ")
-            country_input = strip(readline())
+            country_input = String(strip(readline()))
 
             countries = if isempty(country_input)
                 nothing
@@ -125,7 +125,7 @@ function interactive_explorer()
 
             # Get and validate area codes
             println("\nEnter area codes (comma-separated, e.g., 001 for World): ")
-            areas_input = strip(readline())
+            areas_input = String(strip(readline()))
 
             print_loading("Loading geographic areas")
             geoareas = get_geoareas(client)
