@@ -80,13 +80,21 @@ function interactive_explorer()
             end
 
             print_loading("Fetching series data")
-            data = get_series_data(client, series=series_code, geoareas=countries)
-            print_loaded("Fetched $(nrow(data)) data points")
 
-            display_table(data, max_rows=50)
+            try
+                data = get_series_data(client, series=series_code, geoareas=countries)
+                print_loaded("Fetched $(nrow(data)) data points")
 
-            if nrow(data) > 0
-                export_choice(data, "series_$(series_code)")
+                display_table(data, max_rows=50)
+
+                if nrow(data) > 0
+                    export_choice(data, "series_$(series_code)")
+                end
+            catch e
+                # Clear loading indicator
+                print("\r\033[K")
+                print_error("Failed to fetch data: $(sprint(showerror, e))")
+                println("\n\nThe API request timed out or failed. Please try again.")
             end
         elseif choice == "a"
             areas = get_geoareas(client)
@@ -151,13 +159,21 @@ function interactive_explorer()
             end
 
             print_loading("Comparing trends")
-            data = compare_trends(client, series_code=series_code, years=years, area_codes=areas)
-            print_loaded("Fetched $(nrow(data)) data points")
 
-            display_table(data, max_rows=50)
+            try
+                data = compare_trends(client, series_code=series_code, years=years, area_codes=areas)
+                print_loaded("Fetched $(nrow(data)) data points")
 
-            if nrow(data) > 0
-                export_choice(data, "trends_$(series_code)")
+                display_table(data, max_rows=50)
+
+                if nrow(data) > 0
+                    export_choice(data, "trends_$(series_code)")
+                end
+            catch e
+                # Clear loading indicator
+                print("\r\033[K")
+                print_error("Failed to compare trends: $(sprint(showerror, e))")
+                println("\n\nThe API request timed out or failed. Please try again.")
             end
         elseif choice == "q"
             print_info("Goodbye!")

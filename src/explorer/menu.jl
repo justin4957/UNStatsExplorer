@@ -117,14 +117,28 @@ function explore_indicator_data(client::SDGClient, indicator_code::String)
         return
     elseif choice in ["all", "a"]
         print_loading("Fetching all data for indicator $indicator_code")
-        data = get_indicator_data(client, indicator=indicator_code)
-        print_loaded("Fetched $(nrow(data)) data points")
 
-        if nrow(data) > 0
-            display_table(data, max_rows=50, show_summary=true)
-            export_choice(data, "indicator_$(indicator_code)")
-        else
-            print_warning("No data available for this indicator")
+        try
+            data = get_indicator_data(client, indicator=indicator_code)
+            print_loaded("Fetched $(nrow(data)) data points")
+
+            if nrow(data) > 0
+                display_table(data, max_rows=50, show_summary=true)
+                export_choice(data, "indicator_$(indicator_code)")
+            else
+                print_warning("No data available for this indicator")
+                println("\nPress Enter to continue...")
+                readline()
+            end
+        catch e
+            # Clear loading indicator
+            print("\r\033[K")
+            print_error("Failed to fetch data: $(sprint(showerror, e))")
+            println("\n\nPossible causes:")
+            println("  • API timeout (the request may be too large)")
+            println("  • Network connectivity issues")
+            println("  • Invalid indicator code")
+            println("\nTry using the filter option to narrow down the query.")
             println("\nPress Enter to continue...")
             readline()
         end
@@ -202,23 +216,37 @@ function filtered_query(client::SDGClient, indicator_code::String)
     end
 
     print_loading("Fetching filtered data")
-    data = get_indicator_data(
-        client,
-        indicator=indicator_code,
-        geoareas=countries,
-        time_period=years
-    )
-    print_loaded("Fetched $(nrow(data)) data points")
 
-    if nrow(data) > 0
-        display_table(data, max_rows=50, show_summary=true)
-        export_choice(data, "indicator_$(indicator_code)_filtered")
-    else
-        print_warning("No data found matching your criteria")
-        println("\nTry:")
-        println("  • Different country codes")
-        println("  • Different time period")
-        println("  • Removing filters to see all available data")
+    try
+        data = get_indicator_data(
+            client,
+            indicator=indicator_code,
+            geoareas=countries,
+            time_period=years
+        )
+        print_loaded("Fetched $(nrow(data)) data points")
+
+        if nrow(data) > 0
+            display_table(data, max_rows=50, show_summary=true)
+            export_choice(data, "indicator_$(indicator_code)_filtered")
+        else
+            print_warning("No data found matching your criteria")
+            println("\nTry:")
+            println("  • Different country codes")
+            println("  • Different time period")
+            println("  • Removing filters to see all available data")
+            println("\nPress Enter to return...")
+            readline()
+        end
+    catch e
+        # Clear loading indicator
+        print("\r\033[K")
+        print_error("Failed to fetch data: $(sprint(showerror, e))")
+        println("\n\nPossible causes:")
+        println("  • API timeout (try again or use fewer filters)")
+        println("  • Network connectivity issues")
+        println("  • Invalid indicator code")
+        println("  • No data available for this combination")
         println("\nPress Enter to return...")
         readline()
     end
