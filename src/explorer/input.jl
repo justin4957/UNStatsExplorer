@@ -96,7 +96,7 @@ function get_validated_code(
             if allow_empty
                 return (nothing, false)
             else
-                println("⚠️  Input cannot be empty. Please try again.")
+                print_warning("Input cannot be empty. Please try again.")
                 continue
             end
         end
@@ -105,7 +105,7 @@ function get_validated_code(
         exact_match_idx = findfirst(x -> lowercase(x) == lowercase(input), valid_codes)
         if !isnothing(exact_match_idx)
             code = valid_codes[exact_match_idx]
-            println("✓ Selected: $(descriptions[exact_match_idx])")
+            print_success("Selected: $(descriptions[exact_match_idx])")
             return (code, false)
         end
 
@@ -147,10 +147,10 @@ function get_validated_code(
                 if !isnothing(idx) && 1 <= idx <= length(suggestions)
                     selected_code = suggestions[idx][1]
                     selected_desc = suggestions[idx][2]
-                    println("✓ Selected: $selected_desc")
+                    print_success("Selected: $selected_desc")
                     return (selected_code, true)
                 else
-                    println("⚠️  Invalid choice. Please try again.")
+                    print_warning("Invalid choice. Please try again.")
                     continue
                 end
             end
